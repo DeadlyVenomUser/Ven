@@ -1,1 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>krpano Single Panorama Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    
+    <style>
+        html, body { height:100%; width:100%; margin:0; padding:0; overflow:hidden; }
+        #pano { width:100%; height:100%; }
+    </style>
+</head>
+<body>
 
+    <!-- The container where the panorama will be loaded -->
+    <div id="pano"></div>
+
+    <!-- Load the krpano library -->
+    <script src="krpano.js"></script>
+
+    <script>
+        // Embed the panorama viewer
+        embedpano({
+            xml: "tour.xml",       // Path to your config file
+            target: "pano",        // ID of the target div
+            html5: "auto",         // Use HTML5 rendering
+            mobilescale: 1.0,
+            passQueryParameters: true
+        });
+    </script>
+
+</body>
+</html>
